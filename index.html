@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eja & Bunyi</title>
+<meta name="description" content="Latih sebutan nama huruf dan bunyi fonik dalam Bahasa Malaysia dan English.">
+<meta name="theme-color" content="#1E8A73">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Eja & Bunyi">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@500;700;800&display=swap">
+<style>
+  :root{
+    --bg:#FAF7EF;
+    --surface:#FFFFFF;
+    --surface-2:#F1ECDE;
+    --ink:#21283B;
+    --muted:#726C5E;
+    --border:#E7E0CC;
+    --name:#1E8A73;
+    --sound:#E2592F;
+    --ring: rgba(30,138,115,0.35);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181A1E;
+      --surface:#212328;
+      --surface-2:#2A2D33;
+      --ink:#F1EEE4;
+      --muted:#A9A392;
+      --border:#3A3D44;
+      --name:#3FC4A2;
+      --sound:#FF8A5C;
+      --ring: rgba(63,196,162,0.35);
+      color-scheme: dark;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Nunito', system-ui, -apple-system, sans-serif;
+    padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 40px);
+    display:flex;
+    justify-content:center;
+  }
+  .page{ width:100%; max-width:720px; display:flex; flex-direction:column; gap:22px; }
+
+  h1,h2,h3,.letter-big{ font-family:'Fredoka', 'Nunito', system-ui, sans-serif; text-wrap:balance; }
+
+  header{ display:flex; flex-direction:column; gap:4px; }
+  header h1{ font-size:clamp(1.6rem, 5vw, 2.1rem); font-weight:600; margin:0; color:var(--ink); }
+  header p{ margin:0; color:var(--muted); font-size:0.95rem; max-width:60ch; }
+
+  #install-banner{
+    display:none; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:12px 16px;
+  }
+  #install-banner.show{ display:flex; }
+  #install-banner span{ font-size:0.9rem; color:var(--ink); font-weight:700; }
+  #install-btn{
+    border:none; background:var(--name); color:#fff; font-family:'Fredoka', sans-serif;
+    font-weight:600; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:0.9rem; white-space:nowrap;
+  }
+  #install-dismiss{
+    border:none; background:transparent; color:var(--muted); cursor:pointer; font-size:1.1rem; padding:4px 8px;
+  }
+
+  .lang-switch{
+    display:inline-flex; align-self:flex-start; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:999px; padding:4px; gap:4px;
+  }
+  .lang-switch button{
+    border:none; background:transparent; color:var(--muted); font-family:inherit;
+    font-weight:700; font-size:0.85rem; padding:7px 16px; border-radius:999px; cursor:pointer;
+    letter-spacing:0.02em;
+  }
+  .lang-switch button.active{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:20px; display:flex; flex-direction:column; gap:16px;
+  }
+  .panel-label{
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--muted); font-weight:700;
+  }
+
+  #word-input{
+    width:100%; font-family:'Fredoka', sans-serif; font-size:1.4rem; font-weight:600;
+    padding:12px 16px; border-radius:14px; border:2px solid var(--border); background:var(--surface-2);
+    color:var(--ink); letter-spacing:0.04em;
+  }
+  #word-input:focus{ outline:none; border-color:var(--name); box-shadow:0 0 0 4px var(--ring); }
+
+  .letter-track{ display:flex; flex-wrap:wrap; gap:8px; min-height:44px; }
+  .letter-box{
+    display:flex; align-items:center; justify-content:center;
+    min-width:36px; height:36px; padding-inline:6px; border-radius:10px;
+    background:var(--surface-2); border:1px solid var(--border);
+    font-family:'Fredoka', sans-serif; font-weight:600; font-size:1.05rem; color:var(--muted);
+    transition:transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .letter-box.active{ background:var(--name); color:#fff; border-color:var(--name); transform:scale(1.12); }
+  .letter-box.active.sound-mode{ background:var(--sound); border-color:var(--sound); }
+
+  .action-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .action-btn{
+    flex:1 1 150px; display:flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius:14px; padding:13px 16px; font-family:'Fredoka', sans-serif;
+    font-weight:600; font-size:1rem; cursor:pointer; color:#fff;
+  }
+  .action-btn:active{ transform:translateY(1px); }
+  .action-btn.name{ background:var(--name); }
+  .action-btn.sound{ background:var(--sound); }
+  .action-btn:disabled{ opacity:0.55; cursor:default; }
+
+  .row-between{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .slow-toggle{ display:flex; align-items:center; gap:8px; font-size:0.88rem; color:var(--muted); font-weight:700; }
+  .slow-toggle input{ width:17px; height:17px; accent-color:var(--name); }
+
+  .grid-title{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .grid-title h2{ font-size:1.1rem; font-weight:600; margin:0; }
+  .legend{ display:flex; gap:14px; font-size:0.78rem; color:var(--muted); font-weight:700; }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot.name{ background:var(--name); }
+  .dot.sound{ background:var(--sound); }
+
+  .alphabet-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px; }
+  .letter-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:12px 10px 10px; display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .letter-card .letter-big{ font-size:1.7rem; font-weight:600; line-height:1; }
+  .letter-card .ipa{ font-size:0.72rem; color:var(--muted); font-family:ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+  .letter-card .mini-row{ display:flex; gap:6px; margin-top:2px; }
+  .mini-btn{
+    width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--surface-2);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:var(--ink);
+  }
+  .mini-btn.name:hover, .mini-btn.name:focus-visible{ background:var(--name); border-color:var(--name); color:#fff; }
+  .mini-btn.sound:hover, .mini-btn.sound:focus-visible{ background:var(--sound); border-color:var(--sound); color:#fff; }
+  .mini-btn:focus-visible{ outline:2px solid var(--name); outline-offset:2px; }
+
+  .note{
+    font-size:0.82rem; color:var(--muted); line-height:1.5; padding:12px 16px; background:var(--surface-2);
+    border-radius:12px; border:1px solid var(--border);
+  }
+  footer{ text-align:center; font-size:0.75rem; color:var(--muted); }
+
+  @media (prefers-reduced-motion: reduce){ .letter-box{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Eja &amp; Bunyi</h1>
+    <p>Sebut nama huruf (ejaan) atau bunyi fonik setiap huruf — dalam Bahasa Malaysia atau Bahasa Inggeris, tanpa tertukar.</p>
+  </header>
+
+  <div id="install-banner">
+    <span>Pasang Eja &amp; Bunyi sebagai aplikasi?</span>
+    <div style="display:flex; gap:4px; align-items:center;">
+      <button type="button" id="install-btn">Pasang</button>
+      <button type="button" id="install-dismiss" aria-label="Tutup">✕</button>
+    </div>
+  </div>
+
+  <div class="lang-switch" role="tablist" aria-label="Pilih bahasa">
+    <button type="button" id="lang-ms" class="active" role="tab" aria-selected="true">Bahasa Malaysia</button>
+    <button type="button" id="lang-en" role="tab" aria-selected="false">English</button>
+  </div>
+
+  <section class="panel">
+    <div class="panel-label">Taip perkataan</div>
+    <input id="word-input" type="text" value="rumah" autocomplete="off" spellcheck="false" aria-label="Perkataan untuk dieja atau disebut">
+    <div class="letter-track" id="letter-track" aria-hidden="true"></div>
+    <div class="action-row">
+      <button type="button" class="action-btn name" id="btn-spell">🔤 Eja (nama huruf)</button>
+      <button type="button" class="action-btn sound" id="btn-sound">🔊 Bunyi (fonik)</button>
+    </div>
+    <div class="row-between">
+      <label class="slow-toggle"><input type="checkbox" id="slow-toggle" checked> Sebutan perlahan</label>
+      <span id="voice-status" class="panel-label" style="font-weight:600;"></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="grid-title">
+      <h2>Abjad A–Z</h2>
+      <div class="legend">
+        <span><span class="dot name"></span>Nama</span>
+        <span><span class="dot sound"></span>Bunyi</span>
+      </div>
+    </div>
+    <div class="alphabet-grid" id="alphabet-grid"></div>
+  </section>
+
+  <p class="note">
+    <strong>Nama huruf</strong> ialah cara huruf itu disebut apabila dieja (contohnya <em>A</em> → "ei" dalam Bahasa Inggeris, "a" dalam Bahasa Malaysia).
+    <strong>Bunyi fonik</strong> ialah bunyi sebenar huruf itu dalam perkataan (contohnya <em>A</em> → "aa"), digunakan untuk mengeja bunyi, bukan nama huruf.
+  </p>
+
+  <footer>Berfungsi luar talian selepas dibuka sekali &middot; Eja &amp; Bunyi</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LETTERS = [
+    {ch:"A", ipa:"/a/", ms:{name:"a",   sound:"aa"},    en:{name:"ei",     sound:"aa"}},
+    {ch:"B", ipa:"/b/", ms:{name:"be",  sound:"buh"},   en:{name:"bee",    sound:"buh"}},
+    {ch:"C", ipa:"/tʃ/",ms:{name:"ce",  sound:"cuh"},   en:{name:"see",    sound:"kuh"}},
+    {ch:"D", ipa:"/d/", ms:{name:"de",  sound:"duh"},   en:{name:"dee",    sound:"duh"}},
+    {ch:"E", ipa:"/e/", ms:{name:"e",   sound:"eh"},    en:{name:"ee",     sound:"eh"}},
+    {ch:"F", ipa:"/f/", ms:{name:"ef",  sound:"fff"},   en:{name:"eff",    sound:"fff"}},
+    {ch:"G", ipa:"/g/", ms:{name:"ge",  sound:"guh"},   en:{name:"jee",    sound:"guh"}},
+    {ch:"H", ipa:"/h/", ms:{name:"ha",  sound:"huh"},   en:{name:"eich",   sound:"huh"}},
+    {ch:"I", ipa:"/i/", ms:{name:"i",   sound:"ii"},    en:{name:"ai",     sound:"ih"}},
+    {ch:"J", ipa:"/dʒ/",ms:{name:"je",  sound:"juh"},   en:{name:"jei",    sound:"juh"}},
+    {ch:"K", ipa:"/k/", ms:{name:"ka",  sound:"kuh"},   en:{name:"kei",    sound:"kuh"}},
+    {ch:"L", ipa:"/l/", ms:{name:"el",  sound:"lll"},   en:{name:"el",     sound:"lll"}},
+    {ch:"M", ipa:"/m/", ms:{name:"em",  sound:"mmm"},   en:{name:"em",     sound:"mmm"}},
+    {ch:"N", ipa:"/n/", ms:{name:"en",  sound:"nnn"},   en:{name:"en",     sound:"nnn"}},
+    {ch:"O", ipa:"/o/", ms:{name:"o",   sound:"oh"},    en:{name:"ou",     sound:"oh"}},
+    {ch:"P", ipa:"/p/", ms:{name:"pe",  sound:"puh"},   en:{name:"pee",    sound:"puh"}},
+    {ch:"Q", ipa:"/k/", ms:{name:"ki",  sound:"kuh"},   en:{name:"kyu",    sound:"kwuh"}},
+    {ch:"R", ipa:"/r/", ms:{name:"er",  sound:"rrr"},   en:{name:"ar",     sound:"rrr"}},
+    {ch:"S", ipa:"/s/", ms:{name:"es",  sound:"sss"},   en:{name:"es",     sound:"sss"}},
+    {ch:"T", ipa:"/t/", ms:{name:"te",  sound:"tuh"},   en:{name:"tee",    sound:"tuh"}},
+    {ch:"U", ipa:"/u/", ms:{name:"u",   sound:"uu"},    en:{name:"yu",     sound:"uh"}},
+    {ch:"V", ipa:"/v/", ms:{name:"ve",  sound:"vvv"},   en:{name:"vee",    sound:"vvv"}},
+    {ch:"W", ipa:"/w/", ms:{name:"we",  sound:"wuh"},   en:{name:"dabelyu",sound:"wuh"}},
+    {ch:"X", ipa:"/ks/",ms:{name:"eks", sound:"eks"},   en:{name:"eks",    sound:"eks"}},
+    {ch:"Y", ipa:"/j/", ms:{name:"ye",  sound:"yuh"},   en:{name:"wai",    sound:"yuh"}},
+    {ch:"Z", ipa:"/z/", ms:{name:"zet", sound:"zzz"},   en:{name:"zed",    sound:"zzz"}}
+  ];
+  var LETTER_MAP = {};
+  LETTERS.forEach(function(l){ LETTER_MAP[l.ch] = l; });
+
+  var state = { lang: "ms" };
+
+  var els = {
+    langMs: document.getElementById("lang-ms"),
+    langEn: document.getElementById("lang-en"),
+    input: document.getElementById("word-input"),
+    track: document.getElementById("letter-track"),
+    btnSpell: document.getElementById("btn-spell"),
+    btnSound: document.getElementById("btn-sound"),
+    slow: document.getElementById("slow-toggle"),
+    grid: document.getElementById("alphabet-grid"),
+    voiceStatus: document.getElementById("voice-status")
+  };
+
+  var synth = window.speechSynthesis;
+  var speechSupported = !!synth;
+  var voices = [];
+
+  function refreshVoices(){
+    if (!speechSupported) return;
+    voices = synth.getVoices() || [];
+    updateVoiceStatus();
+  }
+  if (speechSupported){
+    refreshVoices();
+    synth.addEventListener("voiceschanged", refreshVoices);
+  }
+
+  function pickVoice(langPrefix){
+    for (var i=0;i<voices.length;i++){
+      if (voices[i].lang && voices[i].lang.toLowerCase().indexOf(langPrefix) === 0) return voices[i];
+    }
+    return null;
+  }
+
+  function updateVoiceStatus(){
+    if (!speechSupported){ els.voiceStatus.textContent = "Suara tidak disokong"; return; }
+    var v = pickVoice(state.lang === "ms" ? "ms" : "en");
+    els.voiceStatus.textContent = v ? "Suara: " + v.name : "Suara lalai";
+  }
+
+  function speakQueue(texts, lang, onEachStart){
+    if (!speechSupported) return;
+    synth.cancel();
+    var voice = pickVoice(lang === "ms" ? "ms" : "en");
+    var rate = els.slow.checked ? 0.72 : 1;
+    texts.forEach(function(text, i){
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === "ms" ? "ms-MY" : "en-US";
+      if (voice) u.voice = voice;
+      u.rate = rate;
+      u.pitch = 1;
+      if (onEachStart) u.onstart = function(){ onEachStart(i); };
+      synth.speak(u);
+    });
+  }
+
+  function setLang(lang){
+    state.lang = lang;
+    els.langMs.classList.toggle("active", lang === "ms");
+    els.langMs.setAttribute("aria-selected", lang === "ms");
+    els.langEn.classList.toggle("active", lang === "en");
+    els.langEn.setAttribute("aria-selected", lang === "en");
+    updateVoiceStatus();
+  }
+
+  els.langMs.addEventListener("click", function(){ setLang("ms"); });
+  els.langEn.addEventListener("click", function(){ setLang("en"); });
+
+  function currentLetters(){
+    return (els.input.value || "").toUpperCase().replace(/[^A-Z]/g, "").split("");
+  }
+
+  function renderTrack(){
+    var letters = currentLetters();
+    els.track.innerHTML = "";
+    letters.forEach(function(ch){
+      var box = document.createElement("div");
+      box.className = "letter-box";
+      box.textContent = ch;
+      els.track.appendChild(box);
+    });
+    var hasLetters = letters.length > 0;
+    els.btnSpell.disabled = !hasLetters || !speechSupported;
+    els.btnSound.disabled = !hasLetters || !speechSupported;
+  }
+  els.input.addEventListener("input", renderTrack);
+
+  function highlightSequence(mode){
+    var boxes = els.track.querySelectorAll(".letter-box");
+    boxes.forEach(function(b){ b.classList.remove("active", "sound-mode"); });
+    return function(i){
+      boxes.forEach(function(b){ b.classList.remove("active", "sound-mode"); });
+      var b = boxes[i];
+      if (b){
+        b.classList.add("active");
+        if (mode === "sound") b.classList.add("sound-mode");
+      }
+    };
+  }
+
+  els.btnSpell.addEventListener("click", function(){
+    var letters = currentLetters();
+    if (!letters.length) return;
+    var texts = letters.map(function(ch){ return LETTER_MAP[ch][state.lang].name; });
+    speakQueue(texts, state.lang, highlightSequence("name"));
+  });
+
+  els.btnSound.addEventListener("click", function(){
+    var letters = currentLetters();
+    if (!letters.length) return;
+    var texts = letters.map(function(ch){ return LETTER_MAP[ch][state.lang].sound; });
+    speakQueue(texts, state.lang, highlightSequence("sound"));
+  });
+
+  function buildGrid(){
+    els.grid.innerHTML = "";
+    LETTERS.forEach(function(l){
+      var card = document.createElement("div");
+      card.className = "letter-card";
+
+      var big = document.createElement("div");
+      big.className = "letter-big";
+      big.textContent = l.ch;
+      card.appendChild(big);
+
+      var ipa = document.createElement("div");
+      ipa.className = "ipa";
+      ipa.textContent = l.ipa;
+      card.appendChild(ipa);
+
+      var row = document.createElement("div");
+      row.className = "mini-row";
+
+      var nameBtn = document.createElement("button");
+      nameBtn.type = "button";
+      nameBtn.className = "mini-btn name";
+      nameBtn.title = "Sebut nama huruf";
+      nameBtn.setAttribute("aria-label", "Sebut nama huruf " + l.ch);
+      nameBtn.textContent = "🔤";
+      nameBtn.disabled = !speechSupported;
+      nameBtn.addEventListener("click", function(){ speakQueue([l[state.lang].name], state.lang); });
+
+      var soundBtn = document.createElement("button");
+      soundBtn.type = "button";
+      soundBtn.className = "mini-btn sound";
+      soundBtn.title = "Sebut bunyi fonik";
+      soundBtn.setAttribute("aria-label", "Sebut bunyi fonik " + l.ch);
+      soundBtn.textContent = "🔊";
+      soundBtn.disabled = !speechSupported;
+      soundBtn.addEventListener("click", function(){ speakQueue([l[state.lang].sound], state.lang); });
+
+      row.appendChild(nameBtn);
+      row.appendChild(soundBtn);
+      card.appendChild(row);
+      els.grid.appendChild(card);
+    });
+  }
+
+  if (!speechSupported){ els.voiceStatus.textContent = "Suara tidak disokong dalam pelayar ini"; }
+
+  buildGrid();
+  renderTrack();
+  setLang("ms");
+
+  // --- PWA install prompt ---
+  var deferredPrompt = null;
+  var banner = document.getElementById("install-banner");
+  var installBtn = document.getElementById("install-btn");
+  var dismissBtn = document.getElementById("install-dismiss");
+
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    try{
+      if (localStorage.getItem("eb_install_dismissed") !== "1") banner.classList.add("show");
+    }catch(err){ banner.classList.add("show"); }
+  });
+
+  installBtn.addEventListener("click", function(){
+    banner.classList.remove("show");
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(function(){ deferredPrompt = null; });
+  });
+
+  dismissBtn.addEventListener("click", function(){
+    banner.classList.remove("show");
+    try{ localStorage.setItem("eb_install_dismissed", "1"); }catch(err){}
+  });
+
+  window.addEventListener("appinstalled", function(){
+    banner.classList.remove("show");
+  });
+
+  // --- Register service worker for offline use ---
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){ /* offline support unavailable */ });
+    });
+  }
+})();
+</script>
+</body>
+</html>
